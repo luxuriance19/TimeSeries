@@ -43,6 +43,55 @@ class BaseModel():
         lbvalue, pval = acorr_ljungbox(data.dropna(), lags=True)
         return (True, pval[0]) if pval[0] > 0.05 else (False, pval[0])
 
+    def diff_data(self, dataset=None, interval=1):
+        """
+            对数据进行差分
+        :param dataset: 原始数据
+        :param interval: 差分间隔
+        :return: 差分数据
+        """
+        if dataset is None:
+            dataset = self.data
+        diff = list()
+        ###差分后的前interval个数应为空
+        for i in range(interval):
+            diff.append(None)
+
+        for i in range(interval, len(dataset)):
+            value = dataset[i] - dataset[i - interval]
+            diff.append(value)
+        return pd.Series(diff).dropna()
+
+    def restore_data(self, D_data, O_Data, interval):
+        """
+            根据d阶差分与记录下的值　对差分进行还原
+        :param D_data: 差分数据
+        :param O_Data: 原始数据
+        :param interval: 差分间隔
+        :return:
+        """
+
+        index = D_data.keys()
+        # 获取差分对应索引
+        try:
+            start = index._start
+            stop = index._stop
+        except:
+            start = index[0]
+            stop = index[-1] + 1
+
+        ###判断启始值
+        for i in range(start, stop):
+            if pd.isna(D_data[i]):
+                start += 1
+        ### 还原差分
+        for i in range(start, stop):
+            if i - interval < start:
+                D_data[i] = D_data[i] + O_Data[i - interval]
+            else:
+                D_data[i] = D_data[i] + D_data[i - interval]
+        return D_data
+
 
 if __name__ == "__main__":
     data = {
@@ -61,6 +110,14 @@ if __name__ == "__main__":
     }
 
     model = BaseModel(dataset=data)
+    import matplotlib.pyplot as plt
 
+    model.data.plot()
+    diff = model.diff_data(interval=4)
+
+    # diff.plot()
+    restore = model.restore_data(D_data=diff, O_Data=model.data, interval=4)
+    restore.plot()
+    plt.show()
     print(model.stationarity())
     print(model.randomness())
