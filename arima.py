@@ -111,7 +111,7 @@ class ARIMAModel(BaseModel):
             if order is None:
                 order = self._proper_model(data=data.dropna())
                 order = order[0], order[1], len(self.first_values)
-            model = ARMA(data.dropna(), order=order)
+            model = ARIMA(data.dropna(), order=order)
 
         self.order = order
         result_arma = model.fit(disp=-1, method='css')
