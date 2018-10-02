@@ -52,7 +52,7 @@ class ARIMAModel(BaseModel):
             stop = index._stop
         except:
             start = index[0]
-            stop = index[-1] +1
+            stop = index[-1] + 1
 
         ###判断启始值
         for i in range(start, stop):
@@ -147,6 +147,5 @@ if __name__ == "__main__":
     pdata = model.gen_restore_data(D_data=diff)
     model.data.plot()
     pdata.plot()
-
 
     plt.show()
