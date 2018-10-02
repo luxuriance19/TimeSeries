@@ -74,7 +74,7 @@ class ARIMAModel(BaseModel):
         :return:
         """
         D_data = self.data
-        for i in range(max_diff):
+        for i in range(max_diff+1):
             if self.stationarity(D_data)[0] and self.randomness() is not False:
                 return D_data, i
             D_data = self._diff_data(D_data)
@@ -138,8 +138,8 @@ if __name__ == "__main__":
     model = ARIMAModel(dataset=odata)
 
     diff, d = model.gen_stationary_data()
-
-    arma = model.fit_model(data=diff)
+    print(d)
+    arma = model.fit_model(data=diff,order=(0,1))
     print(arma.summary())
     #
     diff = arma.predict()
