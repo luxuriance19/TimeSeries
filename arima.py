@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.tsa.stattools as st
-from statsmodels.tsa.arima_model import ARMA ,ARIMA
+from statsmodels.tsa.arima_model import ARMA, ARIMA
 
 from base import BaseModel
 
@@ -18,7 +18,55 @@ class ARIMAModel(BaseModel):
         super(ARIMAModel, self).__init__(**kwargs)
         self.first_values = []
 
-    def gen_stationary_data(self, max_diff=1) -> tuple:
+    def _diff_data(self, dataset=None, interval=1):
+        if dataset is None:
+            dataset = self.data
+        diff = list()
+        ###差分后的前interval个数应为空
+        for i in range(interval):
+            diff.append(None)
+
+        for i in range(interval, len(dataset)):
+            value = dataset[i] - dataset[i - interval]
+            diff.append(value)
+
+        ### 在Model计入每一次差分的情况
+        res = {
+            'interval': interval,
+            "first_values": dataset
+        }
+        self.first_values.append(res)
+        return pd.Series(diff)
+
+    def _restore_data(self, D_data, first_values, interval):
+        """
+            根据d阶差分与记录下的值　对差分进行还原
+        :param D_data:
+        :return: time_series_restored
+        """
+
+        index = D_data.keys()
+        # 获取差分对应索引
+        try:
+            start = index._start
+            stop = index._stop
+        except:
+            start = index[0]
+            stop = index[-1] +1
+
+        ###判断启始值
+        for i in range(start, stop):
+            if pd.isna(D_data[i]):
+                start += 1
+        ### 还原差分
+        for i in range(start, stop):
+            if i - interval < start:
+                D_data[i] = D_data[i] + first_values[i - interval]
+            else:
+                D_data[i] = D_data[i] + D_data[i - interval]
+        return D_data
+
+    def gen_stationary_data(self, max_diff=3) -> tuple:
         """
         对数据进行做最优差分 必须满足平稳且非白噪声序列
         :param data_series: 历史数据
@@ -26,22 +74,22 @@ class ARIMAModel(BaseModel):
         :return:
         """
         D_data = self.data
-        for i in range(max_diff+1):
+        for i in range(max_diff):
             if self.stationarity(D_data)[0] and self.randomness() is not False:
                 return D_data, i
-            self.first_values.append(pd.Series([D_data[i]]))
-            D_data = D_data.diff(1).dropna()
+            D_data = self._diff_data(D_data)
         return D_data, False
 
-    def restore_data(self, D_data):
+    def gen_restore_data(self, D_data):
         """
             根据d阶差分与记录下的值　对差分进行还原
         :param D_data:
         :return: time_series_restored
         """
         time_series_restored = D_data
-        for first in reversed(self.first_values):
-            time_series_restored = first.append(time_series_restored).cumsum()
+        for res in reversed(self.first_values):
+            time_series_restored = self._restore_data(D_data=time_series_restored, first_values=res["first_values"],
+                                                      interval=res["interval"])
         return time_series_restored
 
     def _proper_model(self, data, max_ar=5, max_ma=5):
@@ -49,23 +97,23 @@ class ARIMAModel(BaseModel):
             获取模型最佳 p ,q
         :return: （p,q）
         """
-        order = st.arma_order_select_ic(data, max_ar=max_ar, max_ma=max_ma, ic=['aic', 'bic', 'hqic'])
+        order = st.arma_order_select_ic(data.dropna(), max_ar=max_ar, max_ma=max_ma, ic=['aic', 'bic', 'hqic'])
         return order.bic_min_order
 
-    def fit_model(self, data, order=None,name ="ARMA"):
+    def fit_model(self, data, order=None, name="ARMA"):
 
         if name == "ARMA":
             if order is None:
                 order = self._proper_model(data=data)
-            model = ARMA(data, order=order)
+            model = ARMA(data.dropna(), order=order)
 
         if name == "ARIMA":
             if order is None:
-                order = self._proper_model(data=data)
-                order = order[0],order[1],len(self.first_values)
-            model = ARMA(data, order=order)
+                order = self._proper_model(data=data.dropna())
+                order = order[0], order[1], len(self.first_values)
+            model = ARMA(data.dropna(), order=order)
 
-
+        self.order = order
         result_arma = model.fit(disp=-1, method='css')
         return result_arma
 
@@ -81,29 +129,24 @@ class ARIMAModel(BaseModel):
 
 if __name__ == "__main__":
     odata = {
-        "黑子": [
-            330.45, 330.97, 331.64, 332.87, 333.61, 333.55,
-            331.90, 330.05, 328.58, 328.31, 329.41, 330.63,
-            331.63, 332.46, 333.36, 334.45, 334.82, 334.32,
-            333.05, 330.87, 329.24, 328.87, 330.18, 331.50,
-            332.81, 333.23, 334.55, 335.82, 336.44, 335.99,
-            334.65, 332.41, 331.32, 330.73, 332.05, 333.53,
-            334.66, 335.07, 336.33, 337.39, 337.65, 337.57,
-            336.25, 334.39, 332.44, 332.25, 333.59, 334.76,
-            335.89, 336.44, 337.63, 338.54, 339.06, 338.95,
-            337.41, 335.71, 333.68, 333.69, 335.05, 336.53,
-            337.81, 338.16, 339.88, 340.57, 341.19, 340.87,
-            339.25, 337.19, 335.49, 336.63, 337.74, 338.36
-        ]
+        "黑子": [601, 604, 620, 626, 641, 642, 645, 655, 682, 678, 692, 707,
+               736, 753, 763, 775, 775, 783, 794, 813, 823, 826, 829, 831,
+               830, 838, 854, 872, 882, 903, 919, 937, 927, 962, 975, 995
+               ]
     }
 
     model = ARIMAModel(dataset=odata)
 
-    data, d = model.gen_stationary_data()
-    arima = model.fit_model(data=data,name="ARMA")
+    diff, d = model.gen_stationary_data()
 
-    pdata = model.restore_data(arima.predict())
+    arma = model.fit_model(data=diff)
+    print(arma.summary())
+    #
+    diff = arma.predict()
 
-    pdata.plot()
+    pdata = model.gen_restore_data(D_data=diff)
     model.data.plot()
+    pdata.plot()
+
+
     plt.show()

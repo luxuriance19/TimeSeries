@@ -26,7 +26,7 @@ class BaseModel():
         if data is None:
             data = self.data
 
-        pval = adfuller(data, autolag='AIC')
+        pval = adfuller(data.dropna(), autolag='AIC')
         return (True, pval[1]) if pval[1] < 0.01 else (False, pval[1])
 
     def randomness(self, data=None):
@@ -38,7 +38,7 @@ class BaseModel():
         """
         if data is None:
             data = self.data
-        lbvalue, pval = acorr_ljungbox(data, lags=True)
+        lbvalue, pval = acorr_ljungbox(data.dropna(), lags=True)
         return (True, pval[0]) if pval[0] > 0.05 else (False, pval[0])
 
 
