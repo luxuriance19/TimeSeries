@@ -8,13 +8,15 @@ from statsmodels.sandbox.stats.diagnostic import acorr_ljungbox
 from statsmodels.tsa.stattools import adfuller
 
 import numpy as np
+
+
 class BaseModel():
     def __init__(self, dataset: dict):
         """
             针对单元　分析
         :param dataset:
         """
-        self.dataset = pd.DataFrame(data=dataset,dtype=np.float)
+        self.dataset = pd.DataFrame(data=dataset, dtype=np.float)
         self.key = self.dataset.keys()[0]
         self.data = self.dataset[self.key]
 
