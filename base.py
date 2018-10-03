@@ -43,22 +43,33 @@ class BaseModel():
         lbvalue, pval = acorr_ljungbox(data.dropna(), lags=True)
         return (True, pval[0]) if pval[0] > 0.05 else (False, pval[0])
 
-    def diff_data(self, dataset=None, interval=1):
+    def diff_data(self, O_data=None, interval=1):
         """
             对数据进行差分
         :param dataset: 原始数据
         :param interval: 差分间隔
         :return: 差分数据
         """
-        if dataset is None:
-            dataset = self.data
+        if O_data is None:
+            O_data = self.data
+
         diff = list()
+
+        index = O_data.keys()
+        # 获差分对应索引
+        try:
+            start = index._start
+            stop = index._stop
+        except:
+            start = index[0]
+            stop = index[-1] + 1
+
         ###差分后的前interval个数应为空
-        for i in range(interval):
+        for i in range(start + interval):
             diff.append(None)
 
-        for i in range(interval, len(dataset)):
-            value = dataset[i] - dataset[i - interval]
+        for i in range(start + interval, stop):
+            value = O_data[i] - O_data[i - interval]
             diff.append(value)
         return pd.Series(diff).dropna()
 
@@ -113,10 +124,18 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     model.data.plot()
-    diff = model.diff_data(interval=4)
+    diff1 = model.diff_data(interval=4)
+
+    diff2 = model.diff_data(O_data=diff1, interval=1)
 
     # diff.plot()
-    restore = model.restore_data(D_data=diff, O_Data=model.data, interval=4)
+
+    restore = model.restore_data(D_data=diff2, O_Data=diff1, interval=1)
+
+    restore = model.restore_data(D_data=restore, O_Data=model.data, interval=4)
+
+    print(restore)
+
     restore.plot()
     plt.show()
     print(model.stationarity())
