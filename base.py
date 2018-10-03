@@ -125,10 +125,10 @@ if __name__ == "__main__":
 
     model.data.plot()
     diff1 = model.diff_data(interval=4)
+    diff1.plot()
 
     diff2 = model.diff_data(O_data=diff1, interval=1)
-
-    # diff.plot()
+    diff2.plot()
 
     restore = model.restore_data(D_data=diff2, O_Data=diff1, interval=1)
 
