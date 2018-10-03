@@ -82,7 +82,6 @@ class BaseModel():
 
         ### 还原差分
         for i in range(start, stop):
-
             if i - interval < stop_index:
                 D_data[i] = D_data[i] + O_data[i - interval]
             else:
@@ -125,9 +124,9 @@ if __name__ == "__main__":
     diff2 = model.diff_data(O_data=diff1, interval=1)
     diff2.plot()
 
-    restore = model.restore_data(D_data=diff2, O_Data=diff1, interval=1)
+    restore = model.restore_data(D_data=diff2, O_data=diff1, interval=1)
 
-    restore = model.restore_data(D_data=restore, O_Data=model.data, interval=4)
+    restore = model.restore_data(D_data=restore, O_data=model.data, interval=4)
 
     print(restore)
 
