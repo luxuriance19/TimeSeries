@@ -114,6 +114,7 @@ if __name__ == "__main__":
 
     print(arma.summary())
     diff = arma.predict()
+
     pdata = model.gen_restore_data(D_data=diff)
     model.data.plot()
     pdata.plot()

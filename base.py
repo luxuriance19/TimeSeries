@@ -91,10 +91,6 @@ class BaseModel():
             start = index[0]
             stop = index[-1] + 1
 
-        ###判断启始值
-        for i in range(start, stop):
-            if pd.isna(D_data[i]):
-                start += 1
         ### 还原差分
         for i in range(start, stop):
             if i - interval < stop:
