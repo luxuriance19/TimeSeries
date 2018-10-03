@@ -55,14 +55,8 @@ class BaseModel():
 
         diff = list()
 
-        index = O_data.keys()
+        start, stop = self.get_start_stop(O_data.keys())
         # 获差分对应索引
-        try:
-            start = index._start
-            stop = index._stop
-        except:
-            start = index[0]
-            stop = index[-1] + 1
 
         ###差分后的前interval个数应为空
         for i in range(start + interval):
@@ -73,7 +67,7 @@ class BaseModel():
             diff.append(value)
         return pd.Series(diff).dropna()
 
-    def restore_data(self, D_data, O_Data, interval):
+    def restore_data(self, D_data, O_data, interval):
         """
             根据d阶差分与记录下的值　对差分进行还原
         :param D_data: 差分数据
@@ -82,22 +76,27 @@ class BaseModel():
         :return:
         """
 
-        index = D_data.keys()
+        start, stop = self.get_start_stop(D_data.keys())
         # 获取差分对应索引
+        _, stop_index = self.get_start_stop(O_data.keys())
+
+        ### 还原差分
+        for i in range(start, stop):
+
+            if i - interval < stop_index:
+                D_data[i] = D_data[i] + O_data[i - interval]
+            else:
+                D_data[i] = D_data[i] + D_data[i - interval]
+        return D_data
+
+    def get_start_stop(self, index):
         try:
             start = index._start
             stop = index._stop
         except:
             start = index[0]
             stop = index[-1] + 1
-
-        ### 还原差分
-        for i in range(start, stop):
-            if i - interval < stop:
-                D_data[i] = D_data[i] + O_Data[i - interval]
-            else:
-                D_data[i] = D_data[i] + D_data[i - interval]
-        return D_data
+        return start, stop
 
 
 if __name__ == "__main__":
