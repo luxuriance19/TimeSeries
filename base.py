@@ -97,7 +97,7 @@ class BaseModel():
                 start += 1
         ### 还原差分
         for i in range(start, stop):
-            if i - interval < start:
+            if i - interval < stop:
                 D_data[i] = D_data[i] + O_Data[i - interval]
             else:
                 D_data[i] = D_data[i] + D_data[i - interval]

@@ -18,7 +18,7 @@ class ARIMAModel(BaseModel):
         super(ARIMAModel, self).__init__(**kwargs)
         self.O_datas = []
 
-    def gen_stationary_data(self, max_diff=3, interval=1) -> tuple:
+    def gen_stationary_data(self, max_diff=1, interval=1) -> tuple:
         """
         对数据进行做最优差分 必须满足平稳且非白噪声序列
         :param data_series: 历史数据
@@ -46,6 +46,8 @@ class ARIMAModel(BaseModel):
         :return: time_series_restored
         """
         time_series_restored = D_data
+
+
         for res in reversed(self.O_datas):
             time_series_restored = self.restore_data(D_data=time_series_restored, O_Data=res['O_data'],
                                                      interval=res['interval'])
@@ -92,7 +94,13 @@ if __name__ == "__main__":
                736, 753, 763, 775, 775, 783, 794, 813, 823, 826, 829, 831,
                830, 838, 854, 872, 882, 903, 919, 937, 927, 962, 975, 995,
                1001, 1013, 1021, 1028, 1027, 1048, 1070, 1095, 1113, 1143, 1154, 1173,
-               1178, 1183, 1205, 1208, 1209, 1223, 1238, 1245, 1258, 1278, 1294, 1314
+               1178, 1183, 1205, 1208, 1209, 1223, 1238, 1245, 1258, 1278, 1294, 1314,
+               1323, 1336, 1355, 1377, 1416, 1430, 1455, 1480, 1514, 1545, 1589, 1634,
+               1669, 1715, 1760, 1812, 1809, 1828, 1871, 1892, 1946, 1983, 2013, 2045,
+               2048, 2097, 2140, 2171, 2208, 2272, 2311, 2349, 2362, 2442, 2479, 2528,
+               2571, 2634, 2684, 2790, 2890, 2964, 3085, 3159, 3237, 3358, 3489, 3588,
+               3624, 3719, 3821, 3934, 4028, 4129, 4205, 4349, 4463, 4598, 4725, 4827,
+               4939, 5067, 5231, 5408, 5492, 5653, 5828, 5965
                ]
     }
 
@@ -100,12 +108,12 @@ if __name__ == "__main__":
     model = ARIMAModel(dataset=odata)
 
     diff, d = model.gen_stationary_data()
-    print(d)
-    arma = model.fit_model(data=diff, order=(1,1))
-    print(arma.summary())
-    #
-    diff = arma.predict()
 
+    arma = model.fit_model(data=diff,order=(1,0,2),name='ARIMA')
+
+
+    print(arma.summary())
+    diff = arma.predict()
     pdata = model.gen_restore_data(D_data=diff)
     model.data.plot()
     pdata.plot()
